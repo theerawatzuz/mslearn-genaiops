@@ -39,6 +39,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
+      - name: Debug Foundry access
+        env:
+          AZURE_AI_PROJECT_ENDPOINT: ${{ secrets.AZURE_AI_PROJECT_ENDPOINT }}
+        run: |
+          az account show --query "{user:user.name, subscription:id}" -o json
+          echo "Endpoint: $AZURE_AI_PROJECT_ENDPOINT"
+          echo "--- data-plane token + curl check ---"
+          TOKEN=$(az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv)
+          curl -s -o /tmp/resp.json -w "HTTP_STATUS:%{http_code}\n" -H "Authorization: Bearer $TOKEN" "$AZURE_AI_PROJECT_ENDPOINT?api-version=2025-05-15-preview"
+          echo "--- response body ---"
+          cat /tmp/resp.json
+          echo ""
+
       - name: Run evaluation
         id: run
         env:
